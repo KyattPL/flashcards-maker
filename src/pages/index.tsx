@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,8 @@ const FlashcardApp = () => {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet>({}); // For managing saved sets
   const [setName, setSetName] = useState('');
 
+  const saveSetRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const retrievedSets = localStorage.getItem('flashcardSets');
     if (retrievedSets !== null) {
@@ -45,16 +47,22 @@ const FlashcardApp = () => {
 
   const saveSet = () => {
     if (!setName.trim()) return;
-    const updatedSets = { ...flashcardSets, [setName]: cards };
+
+    const lines = input.split('\n').filter(line => line.trim());
+    const newCards = lines.map(line => {
+      const [side1, side2] = line.split(separator).map(text => text.trim());
+      return { side1, side2 };
+    }).filter(card => card.side1 && card.side2);
+
+    const updatedSets = { ...flashcardSets, [setName]: newCards };
     setFlashcardSets(updatedSets);
     localStorage.setItem('flashcardSets', JSON.stringify(updatedSets));
+    saveSetRef.current?.click();
   };
 
   const loadSet = (name: string) => {
-    setCards(flashcardSets[name] || []);
-    setIsStudying(true);
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
+    const inputLines = flashcardSets[name].map(obj => obj['side1'] + separator + obj['side2'] + '\n');
+    setInput(inputLines.join(''));
   };
 
   const deleteSet = (name: string) => {
@@ -153,7 +161,7 @@ const FlashcardApp = () => {
         </Dialog>
 
         <Dialog>
-          <DialogTrigger asChild>
+          <DialogTrigger asChild ref={saveSetRef}>
             <Button className="w-full mt-4">Save Set</Button>
           </DialogTrigger>
           <DialogContent>
@@ -171,7 +179,7 @@ const FlashcardApp = () => {
               />
             </div>
             <DialogFooter>
-              <Button onClick={saveSet} className="w-full mt-4">Save</Button>
+              <Button type="submit" onClick={saveSet}>Save</Button>
               <DialogClose asChild>
                 <Button variant="secondary">Cancel</Button>
               </DialogClose>
@@ -222,33 +230,6 @@ const FlashcardApp = () => {
           Next
         </Button>
       </div>
-
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="w-full mt-4">Save Set</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Flashcard Set</DialogTitle>
-            <DialogDescription>Enter a name for your flashcard set below.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="setName">Set Name</Label>
-            <Input
-              id="setName"
-              value={setName}
-              onChange={(e) => setSetName(e.target.value)}
-              placeholder="Enter set name"
-            />
-          </div>
-          <DialogFooter>
-            <Button onClick={saveSet} className="w-full mt-4">Save</Button>
-            <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Button
         onClick={() => setIsStudying(false)}

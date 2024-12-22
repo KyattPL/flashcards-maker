@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'export',
   // If you're not deploying to the root domain, add this:
-  basePath: '/your-repo-name',
+  basePath: '/flashcards-maker',
   images: {
     unoptimized: true,
   }

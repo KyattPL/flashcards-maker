@@ -1,6 +1,7 @@
 {
   "name": "my-flashcards",
   "version": "0.1.0",
+  "homepage": "https://kyattpl.github.io/flashcards-maker/",
   "private": true,
   "scripts": {
     "dev": "next dev",

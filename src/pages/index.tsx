@@ -1,114 +1,152 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Shuffle } from 'lucide-react';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const FlashcardApp = () => {
+  const [input, setInput] = useState('');
+  const [separator, setSeparator] = useState('|');
+  const [cards, setCards] = useState<{ side1: string, side2: string }[]>([]);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isStudying, setIsStudying] = useState(false);
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  const shuffleCards = () => {
+    setCards(cards => {
+      const shuffled = [...cards];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    });
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+  };
 
-export default function Home() {
-  return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const createCards = () => {
+    const lines = input.split('\n').filter(line => line.trim());
+    const newCards = lines.map(line => {
+      const [side1, side2] = line.split(separator).map(text => text.trim());
+      return { side1, side2 };
+    }).filter(card => card.side1 && card.side2);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    if (newCards.length > 0) {
+      setCards(newCards);
+      setCurrentCardIndex(0);
+      setIsFlipped(false);
+      setIsStudying(true);
+    }
+  };
+
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(prev => prev + 1);
+      setIsFlipped(false);
+    }
+  };
+
+  const previousCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(prev => prev - 1);
+      setIsFlipped(false);
+    }
+  };
+
+  const resetStudy = () => {
+    setIsStudying(false);
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+  };
+
+  if (!isStudying) {
+    return (
+      <div className="w-full max-w-lg mx-auto space-y-4 p-4">
+        <div className="space-y-2">
+          <Label htmlFor="flashcards">Enter your flashcards (one pair per line)</Label>
+          <Textarea
+            id="flashcards"
+            placeholder={`English${separator}Spanish\nHello${separator}Hola\nGoodbye${separator}Adiós`}
+            className="h-48"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        <div className="space-y-2">
+          <Label htmlFor="separator">Separator</Label>
+          <Input
+            id="separator"
+            value={separator}
+            onChange={(e) => setSeparator(e.target.value)}
+            className="w-24"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        </div>
+
+        <Button
+          onClick={createCards}
+          className="w-full"
+          disabled={!input.trim()}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Create Flashcards
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-lg mx-auto space-y-4 p-4">
+      <div className="text-center mb-4">
+        <span className="text-sm text-gray-500">
+          Card {currentCardIndex + 1} of {cards.length}
+        </span>
+      </div>
+
+      <Card
+        className="w-full h-64 cursor-pointer flex items-center justify-center p-6 text-center"
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <div className="text-2xl">
+          {isFlipped ? cards[currentCardIndex].side1 : cards[currentCardIndex].side2}
+        </div>
+      </Card>
+
+      <div className="flex justify-between gap-2">
+        <Button
+          onClick={previousCard}
+          disabled={currentCardIndex === 0}
+          className="w-full"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Previous
+        </Button>
+        <Button
+          onClick={shuffleCards}
+          variant="outline"
+          className="w-20"
+        >
+          <Shuffle className="w-4 h-4" />
+        </Button>
+        <Button
+          onClick={nextCard}
+          disabled={currentCardIndex === cards.length - 1}
+          className="w-full"
+        >
+          Next
+        </Button>
+      </div>
+
+      <Button
+        onClick={resetStudy}
+        variant="outline"
+        className="w-full"
+      >
+        Back to Editor
+      </Button>
     </div>
   );
-}
+};
+
+export default FlashcardApp;
